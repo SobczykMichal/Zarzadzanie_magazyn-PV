@@ -22,12 +22,11 @@ def pobierz_prognoze_openmeteo(szerokosc=51.7592, dlugosc=19.4550):
 
         dane = odpowiedz.json()
         promieniowanie_godzinowe = dane["hourly"]["shortwave_radiation"]
-        pv_today = promieniowanie_godzinowe[0:24]  # Dziś
-        pv_forecast_tomorrow = promieniowanie_godzinowe[24:48]  # Jutro
+        pv_today = promieniowanie_godzinowe[0:24]
+        pv_forecast_tomorrow = promieniowanie_godzinowe[24:48]
 
-        # Przekształć promieniowanie (W/m²) na produkcję PV (Wh)
-        efektywnosc_pv = 0.20  # 20% efektywności
-        powierzchnia_paneli = 30.0  # 30 m² (odpowiada ~6 kWp)
+        efektywnosc_pv = 0.20
+        powierzchnia_paneli = 30.0
         pv_today = [promieniowanie * efektywnosc_pv * powierzchnia_paneli for promieniowanie in pv_today]
         pv_forecast_tomorrow = [promieniowanie * efektywnosc_pv * powierzchnia_paneli for promieniowanie in
                                 pv_forecast_tomorrow]
@@ -41,17 +40,25 @@ def pobierz_prognoze_openmeteo(szerokosc=51.7592, dlugosc=19.4550):
 
 # Realistyczny profil obciążenia (Wh) dla jutra
 load_tomorrow = [
-    300, 300, 300, 300, 350, 400, 500, 600, 700, 800, 800, 800,  # 0-11
-    800, 800, 800, 800, 1000, 1200, 1500, 1500, 1200, 1000, 600, 400  # 12-23
+    300, 300, 300, 300, 350, 400, 500, 600, 700, 800, 800, 800,
+    800, 800, 800, 800, 1000, 1200, 1500, 1500, 1200, 1000, 600, 400
 ]  # Suma: 14 kWh/dzień
+
+# Taryfa G12: ceny energii (PLN/kWh) dla każdej godziny
+taryfa_g12 = [
+    0.60, 0.60, 0.60, 0.60, 0.60, 0.60, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00,  # 0-11
+    0.60, 0.60, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 0.60, 0.60  # 12-23
+]
+
+# Cena sprzedaży nadmiaru PV (PLN/kWh)
+cena_sprzedazy_pv = 0.50
 
 # Pobierz dane PV na dziś i jutro
 pv_today, pv_forecast_tomorrow = pobierz_prognoze_openmeteo()
 
 # Zainicjuj i uruchom system dla jutrzejszej symulacji
 system = SmartEnergySystem(soc=50, pv_forecast_tomorrow=pv_forecast_tomorrow)
-system.simulate_day(pv_forecast_tomorrow, load_tomorrow)
+system.simulate_day(pv_forecast_tomorrow, load_tomorrow, taryfa_g12=taryfa_g12)
 system.summary()
-
-# Wygeneruj i zapisz wykres
+system.calculate_savings(taryfa_g12, cena_sprzedazy_pv)
 system.plot_simulation()
