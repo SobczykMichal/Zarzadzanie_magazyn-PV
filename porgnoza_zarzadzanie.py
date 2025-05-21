@@ -5,7 +5,7 @@ class SmartEnergySystem:
     def __init__(self, soc=50, pv_forecast_tomorrow=None):
         self.SOC = soc
         self.SOC_DEFAULT_MIN = 20
-        self.SOC_DEFAULT_MAX = 80
+        self.SOC_DEFAULT_MAX = 95
         self.BATTERY_CAPACITY = 7900  # 7,9 kWh
 
         self.logs = []
